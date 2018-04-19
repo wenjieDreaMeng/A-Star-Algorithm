@@ -7,19 +7,25 @@ class Node_Elem:
         self.dist = dist  
           
 class A_Star:
-    def __init__(self, s_x, s_y, e_x, e_y, w=60, h=30):
+    def __init__(self, s_x, s_y, e_x, e_y, board_end_x, board_end_y, board_start_x, board_start_y):
         self.s_x = s_x  
         self.s_y = s_y  
         self.e_x = e_x  
         self.e_y = e_y  
           
-        self.width = w  
-        self.height = h  
+        self.width = board_end_x - board_start_x + 1
+        self.height = board_end_y - board_start_y + 1
+
+        self.barrierList = []
           
         self.open = []  
         self.close = []  
         self.path = []  
-          
+
+    #   set the barrier area
+    def setBarrierList(self,barrier_list):
+        self.barrierList = barrier_list
+
     def find_path(self):
         p = Node_Elem(None, self.s_x, self.s_y, 0.0)
         while True:  
@@ -57,7 +63,7 @@ class A_Star:
     def get_dist(self, i):  
         # F = G + H  
         #   use Manhattan distance 
-        return i.dist + ( abs(self.e_x-i.x) + abs(self.e_y-i.y) ) * 1.2
+        return i.dist + ( abs(self.e_x-i.x) + abs(self.e_y-i.y) )
         #   use Euclidean distance
         #   return i.dist + math.sqrt(
         #    (self.e_x-i.x)*(self.e_x-i.x)  
@@ -108,9 +114,19 @@ class A_Star:
     #   Determine whether or not it is in a valid area
     def is_valid_coord(self, x, y):  
         if x < 0 or x >= self.width or y < 0 or y >= self.height:  
-            return False  
-        return test_map[y][x] != '#'  
-      
+            return False
+
+        for i in range(len(self.barrierList)):
+            barrier_s_x = self.barrierList[i][0][0]
+            barrier_s_y = self.barrierList[i][0][1]
+            barrier_e_x = self.barrierList[i][1][0]
+            barrier_e_y = self.barrierList[i][1][1]
+            # this point is in the barrier,so don't through it
+            if (((x - barrier_s_x)*(x - barrier_e_x) <= 0) and ((y - barrier_s_y)*(y - barrier_e_y) <= 0)) == True:
+                return False
+
+        return True
+
     def get_searched(self):  
         l = []  
         for i in self.open:  

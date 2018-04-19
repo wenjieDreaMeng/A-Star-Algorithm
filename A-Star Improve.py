@@ -1,106 +1,79 @@
 import math  
 from Class_A_Star import A_Star,Node_Elem
-  
-#   Map
-tm = [  
-'############################################################',  
-'#..........................................................#',  
-'#..........................................................#',  
-'#..........................................................#',  
-'#.......##....................########################.....#',  
-'#.......S#....#...............#......................#.....#',  
-'#........#....#...............#......................#.....#',  
-'#........#....#...............########################.....#',  
-'#........#....#............................................#',  
-'#........#....#............................................#',  
-'#........#....#............................................#',  
-'#........#....#............................................#',  
-'#..........................................................#',  
-'#######.#################################################..#',  
-'#....#........#............................................#',  
-'#....#........#............................................#',  
-'#....##########............................................#',  
-'#..........................................................#',  
-'#..........................................................#',  
-'#..........................................................#',  
-'#..........................................................#',  
-'#..........................................................#',  
-'#...............................##############.............#',  
-'#...............................#........E...#.............#',  
-'#...............................#............#.............#',  
-'#...............................#............#.............#',  
-'#...............................#............#.............#',  
-'#...............................###########..#.............#',  
-'#..........................................................#',  
-'#..........................................................#',  
-'############################################################']  
-  
+
 test_map = []
 
-def generate_tm(start_x, start_y, end_x, end_y, weight, height, pos_x = 0, pox_y = 0):
-    line = ['.'] * height
-    map = [line] * weight
-    print map[start_x]
-    map[start_x][start_y] = 'S'
-    print map[end_x]
-    map[end_x][end_y] = 'E'
-    print map
-    return map
+class MapMatrix:
+    def __init__(self,start_x, start_y, end_x, end_y, board_end_x, board_end_y, board_start_x = 0, board_start_y = 0):
 
-#########################################################  
-def print_map(test_map):  
-    for line in test_map:
-        print ''.join(line)  
-  
-def get_start_XY():  
-    return get_symbol_XY('S')  
-      
-def get_end_XY():  
-    return get_symbol_XY('E')  
-      
-def get_symbol_XY(s):  
-    for y, line in enumerate(test_map):  
-        try:  
-            x = line.index(s)  
-        except:  
-            continue  
-        else:  
-            break  
-    return x, y  
-          
-#########################################################  
-def mark_path(l):  
-    mark_symbol(l, '*')  
-      
-def mark_searched(l):  
-    mark_symbol(l, ' ')  
-      
-def mark_symbol(l, s):  
-    for x, y in l:  
-        test_map[y][x] = s  
-      
-def mark_start_end(s_x, s_y, e_x, e_y):  
-    test_map[s_y][s_x] = 'S'  
-    test_map[e_y][e_x] = 'E'  
-      
-def tm_to_test_map():  
-    for line in tm:  
-        test_map.append(list(line))  
-          
-def find_path():  
-    s_x, s_y = get_start_XY()  
-    e_x, e_y = get_end_XY()  
-    a_star = A_Star(s_x, s_y, e_x, e_y)  
-    a_star.find_path()  
-    searched = a_star.get_searched()  
-    path = a_star.path  
-    mark_searched(searched)
-    mark_path(path)
-    print "path length is %d"%(len(path))  
-    print "searched squares count is %d"%(len(searched))  
-    mark_start_end(s_x, s_y, e_x, e_y)
-      
-if __name__ == "__main__":  
-    #tm_to_test_map()
-    #find_path()  
-    print_map(generate_tm(1,1,5,5,6,6))
+        self.start_x = start_x
+        self.start_y = start_y
+        self.end_x = end_x
+        self.end_y = end_y
+        self.board_end_x = board_end_x
+        self.board_end_y = board_end_y
+        self.board_start_x = board_start_x
+        self.board_start_y = board_start_y
+        self.width = self.board_end_x - self.board_start_x + 1
+        self.height = self.board_end_y - self.board_start_y + 1
+        self.barrierList = []
+        # Deep Copy
+        self.map = [(['.'] * self.width) for i in range(self.height)]
+        for i in range(self.width):
+            for j in range(self.height):
+                if (i == 0 or i == self.width - 1) or (j == 0 or j == self.height-1):
+                    self.map[j][i] = '#'
+
+        self.map[start_y][start_x] = 'S'
+        self.map[end_y][end_x] = 'E'
+
+    def setBarrierList(self,barrier_list):
+        self.barrierList = barrier_list
+        for i in range(len(self.barrierList)):
+            barrier_s_x = self.barrierList[i][0][0]
+            barrier_s_y = self.barrierList[i][0][1]
+            barrier_e_x = self.barrierList[i][1][0]
+            barrier_e_y = self.barrierList[i][1][1]
+
+            for i in range(barrier_s_x,barrier_e_x+1):
+                self.map[barrier_s_y][i] = '#'
+                self.map[barrier_e_y][i] = '#'
+            for i in range(barrier_s_y,barrier_e_y+1):
+                self.map[i][barrier_s_x] = '#'
+                self.map[i][barrier_e_x] = '#'
+
+    def print_map(self):
+        for line in self.map:
+            print ''.join(line)
+
+    def mark_symbol(self,l, s):
+        for x, y in l:
+            self.map[y][x] = s
+
+    def mark_path(self, l):
+        self.mark_symbol(l, '*')
+
+    def mark_searched(self, l):
+        self.mark_symbol(l, ' ')
+
+    def find_path(self):
+
+        a_star = A_Star(self.start_x, self.start_y, self.end_x, self.end_y,
+                        self.board_end_x, self.board_end_y, self.board_start_x, self.board_start_y)
+        a_star.setBarrierList(self.barrierList)
+        a_star.find_path()
+        searched = a_star.get_searched()
+        path = a_star.path
+        print "Path:",path
+        # self.mark_searched(searched)
+        self.mark_path(path)
+        self.map[self.start_y][self.start_x] = 'S'
+        self.map[self.end_y][self.end_x] = 'E'
+
+if __name__ == "__main__":
+
+    map = MapMatrix(1, 1, 8, 8, 10, 10)
+    map.setBarrierList([[(1, 2), (8, 6)]])
+    map.print_map()
+    map.find_path()
+    map.print_map()
